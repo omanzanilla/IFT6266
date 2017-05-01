@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -l nodes=2:ppn=2 -l mem=6gb
+#PBS -l walltime=14:00:00
+#PBS -j oe
+#PBS -N omExp1
+#PBS -r n
+#PBS -m bea
+#PBS -M orestes.manzanilla@gmail.com
+#PBS -V
+# --------------------------------------------------------------
+module add python/3.5.1
+module add CUDA/7.5
+module add openblas/0.2.18
+
+cd /home2/ift6ed38/PythonCode
+
+source NNproject/bin/activate
+
+THEANO_FLAGS='device=cpu,floatX=float32' python CaeMainOM_Exp1.py
