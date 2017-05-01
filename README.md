@@ -31,10 +31,10 @@ A short description of the experiments follows:
 Note: The early stopping is not implemented yet in the experiments, as the are problems just running the basic experiments in Hades, because of some problems with Theano. Small runs work well with small mini-batches, and small training and validation sets, but the small size makes it only useful as a toy to debug. This is a work in process! 
 
 TO DO:
-1 - Find out why Theano does not work in my virtual environment in Hades.
-2 - Find out why the GPU cannot be used.
-3 - After these two problems are fixed, full-size runs will be tried, and the code for showing the images, as well as early-stopping will be added. For now the priority is to have the toy problems work.
-4 - Implement Experiment 4, with Dropout for the Dense layer, augmenting the size of it.
-5 - Plug in all the units the output of the last hidden-state of an LSTM trained over the captions, for the task of predicting the next word (word embedding from wikipedia, vectors of size 50).
-6 - Try training another network to predict which words are nouns, and concatenate the first noun embedding to the hidden-state before connecting it to the units in the auto-encoder.
+1. Find out why Theano does not work in my virtual environment in Hades.
+2. Find out why the GPU cannot be used.
+3. After these two problems are fixed, full-size runs will be tried, and the code for showing the images, as well as early-stopping will be added. For now the priority is to have the toy problems work.
+4. Implement Experiment 4, with Dropout for the Dense layer, augmenting the size of it.
+5. Plug in all the units the output of the last hidden-state of an LSTM trained over the captions, for the task of predicting the next word (word embedding from wikipedia, vectors of size 50).
+6. Try training another network to predict which words are nouns, and concatenate the first noun embedding to the hidden-state before connecting it to the units in the auto-encoder.
 
