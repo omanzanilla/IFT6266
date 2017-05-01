@@ -3,21 +3,30 @@ code for the course IFT6266 on deep learning @ UdeM
 The full description of the project can be found here: https://ift6266h17.wordpress.com/project-description/
 
 The files used to run the experiments in the Hades nodes are:
-myHadesExp1.pbs
-myHadesExp2.pbs
-myHadesExp3.pbs
+
+- myHadesExp1.pbs
+
+- myHadesExp2.pbs
+
+- myHadesExp3.pbs
 
 The scripts for the three experiments are:
-CaeMainOM_Exp1.py, which uses Cae.py to build the neural network.
-CaeMainOM_Exp2.py, which uses Cae_BigDense.py to build the neural network.
-CaeMainOM_Exp2.py, which uses Cae_BigDenseLeaky.py to build the neural network.
+
+- CaeMainOM_Exp1.py, which uses Cae.py to build the neural network.
+
+- CaeMainOM_Exp2.py, which uses Cae_BigDense.py to build the neural network.
+
+- CaeMainOM_Exp2.py, which uses Cae_BigDenseLeaky.py to build the neural network.
 
 Code uses modified versions of some code from https://github.com/Pabrousseau/ift6266h17/ and https://github.com/Dutil/IFT6266/ .
 
 A short description of the experiments follows:
-Experiment 1: a basic convolutional auto-encoder to generate the in-painting of an image based on the context of the image.
-Experiment 2: introduces changes to avoid losing information from the context, by ommitting Pooling and expanding the bottleneck Dense layer.
-Experiment 3: Maximization of the standard deviation of the pixel values of the in-painting generated, as well as Leaky ReLU's are introduced to enhance the quality of the images.
+
+- Experiment 1: a basic convolutional auto-encoder to generate the in-painting of an image based on the context of the image.
+
+- Experiment 2: introduces changes to avoid losing information from the context, by ommitting Pooling and expanding the bottleneck Dense layer.
+
+- Experiment 3: Maximization of the standard deviation of the pixel values of the in-painting generated, as well as Leaky ReLU's are introduced to enhance the quality of the images.
 
 Note: The early stopping is not implemented yet in the experiments, as the are problems just running the basic experiments in Hades, because of some problems with Theano. Small runs work well with small mini-batches, and small training and validation sets, but the small size makes it only useful as a toy to debug. This is a work in process! 
 
