@@ -95,9 +95,8 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 def main():
     
     # Hyper Params
-    num_epochs = 1 #was 100
+    num_epochs = 15 #was 100
     learning_rate = 0.001
-    momentum = 0.975
     batchsize = 100 #Was 200
     
     #Variance of the prediction can be maximized to obtain sharper images.
