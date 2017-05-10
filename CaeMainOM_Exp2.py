@@ -34,8 +34,6 @@ Note2: The early stopping is not implemented yet.
 import sys
 import os
 import time
-import glob
-import PIL.Image as Image
 import numpy as np
 
 import theano
@@ -46,105 +44,11 @@ import lasagne
 #import Cae
 import Cae_BigDense
 
+from common import im2ar, ar2im, np_ar2im, load_dataset_mscoco
+from common import save_jpg_results, create_html_results_page
+
 
 #################
-
-def im2ar(x):
-    y = [[[0]*len(x)]*len(x)]*3
-    y[0] = x[:,:,0]
-    y[1] = x[:,:,1]
-    y[2] = x[:,:,2]
-    return y
-
-def ar2im(x):
-    y = [[[0]*3]*len(x)]*len(x)
-    y[:,:,0] = x[0,:,:] 
-    y[:,:,1] = x[1,:,:]
-    y[:,:,2] = x[2,:,:]
-    return y
-    
-##################
-
-def load_dataset_mscoco():
-    #Path
-    
-    mscoco="/home2/ift6ed38/PythonCode/inpainting"
-    split="train2014"
-    data_path = os.path.join(mscoco, split)
-    imgs = glob.glob(data_path + "/*.jpg")
-    print("cantidad de imagenes = "+str(len(imgs)))
-    
-    MAXIMAS_train = 5000
-    MAXIMAS_val   = 1000
-    TESTSETsize   =  100
-    
-    X_train = []
-    y_train = []
-
-    
-    
-            
-    for i, img_path in enumerate(imgs):
-        
-        if i == MAXIMAS_train: #If the number of images exceeds the limit
-            print("limit of "+str(i)+" images for training was achieved")    
-            break
-        
-        img = Image.open(img_path)
-        img_array = np.divide(np.array(img,dtype='float32'),255)
-
-        if len(img_array.shape) == 3:
-            temp = np.copy(img_array)
-            input = np.copy(img_array)
-            input[16:48, 16:48,:] = 0
-            target = img_array[16:48, 16:48,:]
-        else:
-            input[:,:,0] = np.copy(img_array)
-            input[:,:,1] = np.copy(img_array)
-            input[:,:,2] = np.copy(img_array)
-            target = input[16:48, 16:48,:]
-            input[16:48, 16:48,:] = 0
-        
-        X_train.append(im2ar(input))
-        y_train.append(im2ar(target))
-    
-    split="val2014"
-    data_path = os.path.join(mscoco, split)
-    imgs = glob.glob(data_path + "/*.jpg")
-    
-    X_val = []
-    y_val = []
-            
-    for i, img_path in enumerate(imgs):
-        
-        if i == MAXIMAS_val: #If the number of images exceeds the limit
-            print("limit of "+str(i)+" images for validation was achieved")    
-            break
-        
-        img = Image.open(img_path)
-        img_array = np.divide(np.array(img,dtype='float32'),255)
-
-        if len(img_array.shape) == 3:
-            input = np.copy(img_array)
-            input[16:48, 16:48,:] = 0
-            target = img_array[16:48, 16:48,:]
-        else:
-            input[:,:,0] = np.copy(img_array)
-            input[:,:,1] = np.copy(img_array)
-            input[:,:,2] = np.copy(img_array)
-            target = input[16:48, 16:48,:]
-            input[16:48, 16:48,:] = 0
-        
-        X_val.append(im2ar(input))
-        y_val.append(im2ar(target))
-    
-    # We reserve the last TESTSETsize training examples for testing. (was 10000)
-    print("From the validation set, the last  "+str(TESTSETsize)+" images are chosen for testing") 
-    X_val, X_test = X_val[:-TESTSETsize], X_val[-TESTSETsize:]
-    y_val, y_test = y_val[:-TESTSETsize], y_val[-TESTSETsize:]
-    
-    return (np.array(X_train),np.array(y_train),np.array(X_val),np.array(y_val),np.array(X_test),np.array(y_test))
-    
 
 ###################
 
@@ -191,10 +95,9 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
 def main():
     
     # Hyper Params
-    num_epochs = 20 #was 100
+    num_epochs = 15 #was 100
     learning_rate = 0.001
-    momentum = 0.975
-    batchsize = 10 #Was 200
+    batchsize = 100 #Was 200
     
     #Variance of the prediction can be maximized to obtain sharper images.
     #If this coefficient is set to "0", the loss is just the L2 loss.
@@ -202,7 +105,7 @@ def main():
     
     # Load the dataset
     print("Loading data...")
-    X_train, y_train, X_val, y_val, X_test, y_test = load_dataset_mscoco()
+    X_train, y_train, X_val, y_val, X_test, y_test, X_original_test = load_dataset_mscoco()
     #print("length of y_train = " + str(y_train))
     #print("length of y_val = "+ str(y_val))
     #print("length of y_test = "+str(y_test))
@@ -231,7 +134,8 @@ def main():
     # Update expressions 
     # Stochastic Gradient Descent (SGD) with Nesterov momentum
     params = lasagne.layers.get_all_params(network, trainable=True)
-    updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate, momentum)
+    #updates = lasagne.updates.nesterov_momentum(loss, params, learning_rate, momentum)
+    updates = lasagne.updates.adam(loss, params, learning_rate)
 
     # Test Loss expression
     # 'Deterministic = True' disables droupout
@@ -244,6 +148,10 @@ def main():
 
     # Test Function
     val_fn = theano.function([inputVar, target_var], test_loss)
+
+    # Predict function
+    predict = theano.function([inputVar], test_prediction)
+
     # Training Loop
     print("Starting training...")
     # We iterate over epochs
@@ -271,24 +179,39 @@ def main():
         print("Epoch {} of {} took {:.3f}s".format(
             epoch + 1, num_epochs, time.time() - start_time))
         #print("  COMMENTARY: train_batches = "+str(train_batches))
-        print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-        print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+        if train_batches == 0:
+            print("train_batches is 0, can't compute training loss")
+        else:
+            print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+        if val_batches == 0:
+            print("val_batches is 0, can't compute validation loss")
+        else:
+            print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
 
     # Print the test error
     test_err = 0
     test_batches = 0
+    preds = np.zeros((X_test.shape[0], 3, 32, 32))
     for batch in iterate_minibatches(X_test, y_test, batchsize, shuffle=False):
         inputs, targets = batch
+        preds[test_batches*batchsize:(test_batches+1)*batchsize] = predict(inputs)
         err = val_fn(inputs, targets)
         test_err += err
         test_batches += 1
     print("Final results:")
-    print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+    if test_batches == 0:
+        print("test_batches is 0, can't compute test loss.")
+    else:
+        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
 
 
     # Save model
     np.savez('caeOM-exp2.npz', *lasagne.layers.get_all_param_values(network))
-        
+
+    # Save predictions and create HTML page to visualize them
+    save_jpg_results("assets_exp2/", preds, X_test, y_test, X_original_test)
+    create_html_results_page("results_exp2.html", "assets_exp2/", preds.shape[0])
+    
 ###########################
 
 if __name__ == '__main__':
